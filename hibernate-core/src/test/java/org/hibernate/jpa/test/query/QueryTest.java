@@ -35,9 +35,7 @@ import org.hibernate.jpa.test.Wallet;
 import org.hibernate.stat.Statistics;
 
 import org.hibernate.testing.SkipForDialect;
-import org.hibernate.testing.SkipForDialects;
 import org.hibernate.testing.TestForIssue;
-
 import org.junit.Test;
 import junit.framework.Assert;
 
@@ -373,13 +371,9 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@SkipForDialects(
-			value = {
-					@SkipForDialect(value = Oracle8iDialect.class, jiraKey = "HHH-10161", comment = "Cannot convert untyped null (assumed to be BINARY type) to NUMBER"),
-					@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
-			}
-	)
+	@SkipForDialect(value = Oracle8iDialect.class, jiraKey = "HHH-10161", comment = "Cannot convert untyped null (assumed to be BINARY type) to NUMBER")
+	@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
 	public void testNativeQueryNullPositionalParameter() throws Exception {
 		EntityManager em = getOrCreateEntityManager();
 		em.getTransaction().begin();
@@ -389,16 +383,16 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 			// native queries don't seem to flush by default ?!?
 			em.flush();
 			Query q = em.createNativeQuery( "select * from Item i where i.intVal=?" );
-			q.setParameter( 0, null );
+			q.setParameter( 1, null );
 			List results = q.getResultList();
 			// null != null
 			assertEquals( 0, results.size() );
 			q = em.createNativeQuery( "select * from Item i where i.intVal is null and ? is null" );
-			q.setParameter( 0, null );
+			q.setParameter( 1, null );
 			results = q.getResultList();
 			assertEquals( 1, results.size() );
 			q = em.createNativeQuery( "select * from Item i where i.intVal is null or i.intVal = ?" );
-			q.setParameter( 0, null );
+			q.setParameter(1, null );
 			results = q.getResultList();
 			assertEquals( 1, results.size() );
 		}
@@ -412,13 +406,9 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 
 	@Test
 	@TestForIssue(jiraKey = "HHH-10161")
-	@SkipForDialects(
-			value = {
-					@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = Oracle8iDialect.class, comment = "ORA-00932: inconsistent datatypes: expected NUMBER got BINARY")
-			}
-	)
+	@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = Oracle8iDialect.class, comment = "ORA-00932: inconsistent datatypes: expected NUMBER got BINARY")
 	public void testNativeQueryNullPositionalParameterParameter() throws Exception {
 		EntityManager em = getOrCreateEntityManager();
 		em.getTransaction().begin();
@@ -436,7 +426,7 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 
 				@Override
 				public Integer getPosition() {
-					return 0;
+					return 1;
 				}
 
 				@Override
@@ -467,13 +457,9 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@SkipForDialects(
-			value = {
-					@SkipForDialect(value = Oracle8iDialect.class, jiraKey = "HHH-10161", comment = "Cannot convert untyped null (assumed to be BINARY type) to NUMBER"),
-					@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
-			}
-	)
+	@SkipForDialect(value = Oracle8iDialect.class, jiraKey = "HHH-10161", comment = "Cannot convert untyped null (assumed to be BINARY type) to NUMBER")
+	@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
 	public void testNativeQueryNullNamedParameter() throws Exception {
 		EntityManager em = getOrCreateEntityManager();
 		em.getTransaction().begin();
@@ -506,13 +492,9 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 
 	@Test
 	@TestForIssue(jiraKey = "HHH-10161")
-	@SkipForDialects(
-			value = {
-					@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint"),
-					@SkipForDialect(value = Oracle8iDialect.class, comment = "ORA-00932: inconsistent datatypes: expected NUMBER got BINARY")
-			}
-	)
+	@SkipForDialect(value = PostgreSQL9Dialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = PostgresPlusDialect.class, jiraKey = "HHH-10312", comment = "Cannot convert untyped null (assumed to be bytea type) to bigint")
+	@SkipForDialect(value = Oracle8iDialect.class, comment = "ORA-00932: inconsistent datatypes: expected NUMBER got BINARY")
 	public void testNativeQueryNullNamedParameterParameter() throws Exception {
 		EntityManager em = getOrCreateEntityManager();
 		em.getTransaction().begin();
@@ -1157,7 +1139,7 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 			em.getTransaction().commit();
 			em.getTransaction().begin();
 			Query query = em.createNativeQuery( "select * from Wallet w where w.brand = ?", Wallet.class );
-			query.setParameter( 0, "Lacoste" );
+			query.setParameter( 1, "Lacoste" );
 			w = (Wallet) query.getSingleResult();
 			assertNotNull( w );
 			em.remove( w );
@@ -1193,7 +1175,7 @@ public class QueryTest extends BaseEntityManagerFunctionalTestCase {
 			assertNotNull( item );
 			assertEquals( "Micro$oft mouse", item.getDescr() );
 			query = em.createNativeQuery( "select * from Item where name = ?", Item.class );
-			query.setParameter( 0, "Mouse" );
+			query.setParameter( 1, "Mouse" );
 			item = (Item) query.getSingleResult();
 			assertNotNull( item );
 			assertEquals( "Micro$oft mouse", item.getDescr() );

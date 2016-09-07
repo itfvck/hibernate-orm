@@ -431,7 +431,21 @@ Can be
 
 * `TransactionCoordinatorBuilder` instance
 * `TransactionCoordinatorBuilder` implementation `Class` reference
-* `TransactionCoordinatorBuilder` implementation class name (fully-qualified name) or short-name
+* `TransactionCoordinatorBuilder` implementation class name (fully-qualified name) or short name
+
+The following short names are defined for this setting:
+
+`jdbc`:: Manages transactions via calls to `java.sql.Connection` (default for non-JPA applications)
+`jta`:: Manages transactions via JTA. See <<chapters/bootstrap/Bootstrap.adoc#bootstrap-jpa-compliant,Java EE bootstrapping>>
+
+If a JPA application does not provide a setting for `hibernate.transaction.coordinator_class`, Hibernate will 
+automatically build the proper transaction coordinator based on the transaction type for the persistence unit.
+
+If a non-JPA application does not provide a setting for `hibernate.transaction.coordinator_class`, Hibernate 
+will use `jdbc` as the default. This default will cause problems if the application actually uses JTA-based transactions.
+A non-JPA application that uses JTA-based transactions should explicitly set `hibernate.transaction.coordinator_class=jta` 
+or provide a custom `org.hibernate.resource.transaction.TransactionCoordinatorBuilder` that builds a 
+`org.hibernate.resource.transaction.TransactionCoordinator` that properly coordinates with JTA-based transactions. 
 
 |`hibernate.jta.track_by_thread` | `true` (default value) or `false` |
 
@@ -556,7 +570,7 @@ Hibernate historically also accepted `hibernate.hbm2ddl.import_files` for a simi
 Comma-separated names of the optional files containing SQL DML statements executed during the `SessionFactory` creation.
 File order matters, the statements of a give file are executed before the statements of the following one.
 
-These statements are only executed if the schema is created, meaning that `hibernate.hbm2ddl.auto` is set to `create` or `create-drop`.
+These statements are only executed if the schema is created, meaning that `hibernate.hbm2ddl.auto` is set to `create`, `create-drop`, or `update`.
 `javax.persistence.schema-generation.create-script-source` / `javax.persistence.schema-generation.drop-script-source` should be preferred.
 
 |`javax.persistence.sql-load-script-source` | |
@@ -710,14 +724,35 @@ Otherwise, the persistence context will stay alive till the transaction completi
 
 |`hibernate.ejb.metamodel.population`| `enabled` or `disabled`, or `ignoreUnsupported` (default value) a|
 
+Setting that indicates whether to build the JPA types.
+
+Accepts three values:
+
+enabled:: Do the build
+disabled:: Do not do the build
+ignoreUnsupported:: Do the build, but ignore any non-JPA features that would otherwise result in a failure (e.g. `@Any` annotation).
+
+|`hibernate.jpa.static_metamodel.population` | `enabled` or `disabled`, or `skipUnsupported` (default value) a|
+
 Setting that controls whether we seek out JPA _static metamodel_ classes and populate them.
 
 Accepts three values:
 
 enabled:: Do the population
 disabled:: Do not do the population
-ignoreUnsupported:: Do the population, but ignore any non-JPA features that would otherwise result in the population failing (e.g. `@Any` annotation).
+skipUnsupported:: Do the population, but ignore any non-JPA features that would otherwise result in the population failing (e.g. `@Any` annotation).
+
 
 |`hibernate.delay_cdi_access`| `true` or `false` (default value) | Defines delayed access to CDI `BeanManager`. Starting in 5.1 the preferred means for CDI bootstrapping is through `org.hibernate.jpa.event.spi.jpa.ExtendedBeanManager`.
+
+|`hibernate.allow_update_outside_transaction` | `true` or `false` (default value) a|
+
+Setting that allows to perform update operations outside of a transaction boundary.
+
+Accepts two values:
+
+true:: allows to flush an update out of a transaction
+false:: does not allow
+
 |=====================================================================================================================================================================================================================================================
 

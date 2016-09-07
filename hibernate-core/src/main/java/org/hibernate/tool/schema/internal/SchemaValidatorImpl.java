@@ -17,11 +17,11 @@ import org.hibernate.dialect.Dialect;
 import org.hibernate.mapping.Column;
 import org.hibernate.mapping.Selectable;
 import org.hibernate.mapping.Table;
+import org.hibernate.resource.transaction.spi.DdlTransactionIsolator;
 import org.hibernate.tool.schema.extract.spi.ColumnInformation;
 import org.hibernate.tool.schema.extract.spi.DatabaseInformation;
 import org.hibernate.tool.schema.extract.spi.SequenceInformation;
 import org.hibernate.tool.schema.extract.spi.TableInformation;
-import org.hibernate.tool.schema.internal.exec.JdbcConnectionContextNonSharedImpl;
 import org.hibernate.tool.schema.internal.exec.JdbcContext;
 import org.hibernate.tool.schema.spi.ExecutionOptions;
 import org.hibernate.tool.schema.spi.SchemaFilter;
@@ -53,13 +53,11 @@ public class SchemaValidatorImpl implements SchemaValidator {
 	public void doValidation(Metadata metadata, ExecutionOptions options) {
 		final JdbcContext jdbcContext = tool.resolveJdbcContext( options.getConfigurationValues() );
 
+		final DdlTransactionIsolator isolator = tool.getDdlTransactionIsolator( jdbcContext );
+
 		final DatabaseInformation databaseInformation = Helper.buildDatabaseInformation(
 				tool.getServiceRegistry(),
-				new JdbcConnectionContextNonSharedImpl(
-						jdbcContext.getJdbcConnectionAccess(),
-						jdbcContext.getSqlStatementLogger(),
-						false
-				),
+				isolator,
 				metadata.getDatabase().getDefaultNamespace().getName()
 		);
 
@@ -73,6 +71,8 @@ public class SchemaValidatorImpl implements SchemaValidator {
 			catch (Exception e) {
 				log.debug( "Problem releasing DatabaseInformation : " + e.getMessage() );
 			}
+
+			isolator.release();
 		}
 	}
 

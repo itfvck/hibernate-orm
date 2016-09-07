@@ -40,11 +40,10 @@ import org.hibernate.userguide.model.PhoneType;
 import org.hibernate.userguide.model.WireTransferPayment;
 
 import org.hibernate.testing.RequiresDialect;
-import org.hibernate.testing.RequiresDialects;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.hibernate.userguide.util.TransactionUtil.doInJPA;
+import static org.hibernate.testing.transaction.TransactionUtil.doInJPA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -790,7 +789,7 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 		doInJPA( this::entityManagerFactory, entityManager -> {
 			Session session = entityManager.unwrap( Session.class );
 			//tag::hql-api-stream-example[]
-			Stream<Object[]> persons = session.createQuery(
+			Stream<Person> persons = session.createQuery(
 				"select p " +
 				"from Person p " +
 				"where p.name like :name" )
@@ -798,7 +797,6 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 			.stream();
 
 			Map<Phone, List<Call>> callRegistry = persons
-				.map( row -> Person.class.cast( row[0] ) )
 				.flatMap( person -> person.getPhones().stream() )
 				.flatMap( phone -> phone.getCalls().stream() )
 				.collect(Collectors.groupingBy(Call::getPhone));
@@ -1249,7 +1247,9 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@RequiresDialects({@RequiresDialect(H2Dialect.class), @RequiresDialect(Oracle8iDialect.class), @RequiresDialect(MySQL5Dialect.class)})
+	@RequiresDialect(H2Dialect.class)
+	@RequiresDialect(Oracle8iDialect.class)
+	@RequiresDialect(MySQL5Dialect.class)
 	public void test_hql_bit_length_function_example() {
 		doInJPA( this::entityManagerFactory, entityManager -> {
 			//tag::hql-bit-length-function-example[]
@@ -1744,7 +1744,9 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@RequiresDialects({@RequiresDialect(H2Dialect.class), @RequiresDialect(PostgreSQL81Dialect.class), @RequiresDialect(MySQL5Dialect.class)})
+	@RequiresDialect(H2Dialect.class)
+	@RequiresDialect(PostgreSQL81Dialect.class)
+	@RequiresDialect(MySQL5Dialect.class)
 	public void test_hql_relational_comparisons_example_3() {
 
 		doInJPA( this::entityManagerFactory, entityManager -> {
@@ -1947,7 +1949,9 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@RequiresDialects({@RequiresDialect(H2Dialect.class), @RequiresDialect(PostgreSQL81Dialect.class), @RequiresDialect(MySQL5Dialect.class)})
+	@RequiresDialect(H2Dialect.class)
+	@RequiresDialect(PostgreSQL81Dialect.class)
+	@RequiresDialect(MySQL5Dialect.class)
 	public void test_hql_between_predicate_example_2() {
 
 		doInJPA( this::entityManagerFactory, entityManager -> {
@@ -2201,7 +2205,9 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@RequiresDialects({@RequiresDialect(H2Dialect.class), @RequiresDialect(PostgreSQL81Dialect.class), @RequiresDialect(MySQL5Dialect.class)})
+	@RequiresDialect(H2Dialect.class)
+	@RequiresDialect(PostgreSQL81Dialect.class)
+	@RequiresDialect(MySQL5Dialect.class)
 	public void test_hql_group_by_example_3() {
 
 		doInJPA( this::entityManagerFactory, entityManager -> {
@@ -2221,7 +2227,9 @@ public class HQLTest extends BaseEntityManagerFunctionalTestCase {
 	}
 
 	@Test
-	@RequiresDialects({@RequiresDialect(H2Dialect.class), @RequiresDialect(PostgreSQL81Dialect.class), @RequiresDialect(MySQL5Dialect.class)})
+	@RequiresDialect(H2Dialect.class)
+	@RequiresDialect(PostgreSQL81Dialect.class)
+	@RequiresDialect(MySQL5Dialect.class)
 	public void test_hql_group_by_example_4() {
 
 		doInJPA( this::entityManagerFactory, entityManager -> {

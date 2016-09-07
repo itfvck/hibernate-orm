@@ -37,6 +37,8 @@ import org.hibernate.internal.CoreLogging;
 import org.hibernate.internal.CoreMessageLogger;
 import org.hibernate.internal.util.ReflectHelper;
 import org.hibernate.service.ServiceRegistry;
+import org.hibernate.type.BinaryType;
+import org.hibernate.type.RowVersionType;
 import org.hibernate.type.Type;
 import org.hibernate.type.descriptor.JdbcTypeNameMapper;
 import org.hibernate.type.descriptor.converter.AttributeConverterSqlTypeDescriptorAdapter;
@@ -62,9 +64,12 @@ public class SimpleValue implements KeyValue {
 	private final MetadataImplementor metadata;
 
 	private final List<Selectable> columns = new ArrayList<Selectable>();
+	private final List<Boolean> insertability = new ArrayList<Boolean>();
+	private final List<Boolean> updatability = new ArrayList<Boolean>();
 
 	private String typeName;
 	private Properties typeParameters;
+	private boolean isVersion;
 	private boolean isNationalized;
 	private boolean isLob;
 
@@ -108,15 +113,32 @@ public class SimpleValue implements KeyValue {
 	}
 	
 	public void addColumn(Column column) {
-		if ( !columns.contains(column) ) {
+		addColumn( column, true, true );
+	}
+
+	public void addColumn(Column column, boolean isInsertable, boolean isUpdatable) {
+		int index = columns.indexOf( column );
+		if ( index == -1 ) {
 			columns.add(column);
+			insertability.add( isInsertable );
+			updatability.add( isUpdatable );
 		}
-		column.setValue(this);
+		else {
+			if ( insertability.get( index ) != isInsertable ) {
+				throw new IllegalStateException( "Same column is added more than once with different values for isInsertable" );
+			}
+			if ( updatability.get( index ) != isUpdatable ) {
+				throw new IllegalStateException( "Same column is added more than once with different values for isUpdatable" );
+			}
+		}
+		column.setValue( this );
 		column.setTypeIndex( columns.size() - 1 );
 	}
-	
+
 	public void addFormula(Formula formula) {
 		columns.add( formula );
+		insertability.add( false );
+		updatability.add( false );
 	}
 
 	@Override
@@ -168,6 +190,13 @@ public class SimpleValue implements KeyValue {
 		this.typeName = typeName;
 	}
 
+	public void makeVersion() {
+		this.isVersion = true;
+	}
+
+	public boolean isVersion() {
+		return isVersion;
+	}
 	public void makeNationalized() {
 		this.isNationalized = true;
 	}
@@ -408,6 +437,12 @@ public class SimpleValue implements KeyValue {
 		}
 
 		Type result = metadata.getTypeResolver().heuristicType( typeName, typeParameters );
+		// if this is a byte[] version/timestamp, then we need to use RowVersionType
+		// instead of BinaryType (HHH-10413)
+		if ( isVersion && BinaryType.class.isInstance( result ) ) {
+			log.debug( "version is BinaryType; changing to RowVersionType" );
+			result = RowVersionType.INSTANCE;
+		}
 		if ( result == null ) {
 			String msg = "Could not determine type for: " + typeName;
 			if ( table != null ) {
@@ -592,18 +627,20 @@ public class SimpleValue implements KeyValue {
 	}
 	
 	public boolean[] getColumnInsertability() {
-		boolean[] result = new boolean[ getColumnSpan() ];
-		int i = 0;
-		Iterator iter = getColumnIterator();
-		while ( iter.hasNext() ) {
-			Selectable s = (Selectable) iter.next();
-			result[i++] = !s.isFormula();
-		}
-		return result;
+		return extractBooleansFromList( insertability );
 	}
 	
 	public boolean[] getColumnUpdateability() {
-		return getColumnInsertability();
+		return extractBooleansFromList( updatability );
+	}
+
+	private static boolean[] extractBooleansFromList(List<Boolean> list) {
+		final boolean[] array = new boolean[ list.size() ];
+		int i = 0;
+		for ( Boolean value : list ) {
+			array[ i++ ] = value;
+		}
+		return array;
 	}
 
 	public void setJpaAttributeConverterDescriptor(AttributeConverterDescriptor attributeConverterDescriptor) {

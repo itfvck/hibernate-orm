@@ -114,7 +114,8 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 
 	private CacheMode cacheMode;
 
-	private boolean closed;
+	protected boolean closed;
+	protected boolean waitingForAutoClose;
 
 	// transient & non-final for Serialization purposes - ugh
 	private transient SessionEventListenerManagerImpl sessionEventsManager = new SessionEventListenerManagerImpl();
@@ -306,6 +307,7 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 
 	protected void setClosed() {
 		closed = true;
+		waitingForAutoClose = false;
 		cleanupOnClose();
 	}
 
@@ -342,9 +344,10 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 
 	@Override
 	public boolean isTransactionInProgress() {
-		return !isClosed()
-				&& transactionCoordinator.isJoined()
-				&& transactionCoordinator.getTransactionDriverControl().getStatus() == TransactionStatus.ACTIVE;
+		if ( waitingForAutoClose ) {
+			return transactionCoordinator.isTransactionActive();
+		}
+		return !isClosed() && transactionCoordinator.isTransactionActive();
 	}
 
 	@Override
@@ -824,23 +827,9 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 
 	@Override
 	public NativeQueryImplementor createNativeQuery(String sqlString) {
-		checkOpen();
-		checkTransactionSynchStatus();
-		delayedAfterCompletion();
-
-		try {
-			NativeQueryImpl query = new NativeQueryImpl(
-					sqlString,
-					false,
-					this,
-					getFactory().getQueryPlanCache().getSQLParameterMetadata( sqlString )
-			);
-			query.setComment( "dynamic native SQL query" );
-			return query;
-		}
-		catch ( RuntimeException he ) {
-			throw exceptionConverter.convert( he );
-		}
+		final NativeQueryImpl query = (NativeQueryImpl) createSQLQuery( sqlString );
+		query.setZeroBasedParametersIndex( false );
+		return query;
 	}
 
 	@Override
@@ -891,12 +880,31 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 
 	@Override
 	public NativeQueryImplementor createSQLQuery(String queryString) {
-		return createNativeQuery( queryString );
+		checkOpen();
+		checkTransactionSynchStatus();
+		delayedAfterCompletion();
+
+		try {
+			NativeQueryImpl query = new NativeQueryImpl(
+					queryString,
+					false,
+					this,
+					getFactory().getQueryPlanCache().getSQLParameterMetadata( queryString )
+			);
+			query.setComment( "dynamic native SQL query" );
+			return query;
+		}
+		catch ( RuntimeException he ) {
+			throw exceptionConverter.convert( he );
+		}
+
 	}
 
 	@Override
 	public NativeQueryImplementor getNamedSQLQuery(String name) {
-		return getNamedNativeQuery( name );
+		final NativeQueryImpl nativeQuery = (NativeQueryImpl) getNamedNativeQuery( name );
+		nativeQuery.setZeroBasedParametersIndex( true );
+		return nativeQuery;
 	}
 
 	@Override
@@ -964,7 +972,7 @@ public abstract class AbstractSharedSessionContract implements SharedSessionCont
 	}
 
 	@Override
-	public void setJdbcBatchSize(int jdbcBatchSize) {
+	public void setJdbcBatchSize(Integer jdbcBatchSize) {
 		this.jdbcBatchSize = jdbcBatchSize;
 	}
 

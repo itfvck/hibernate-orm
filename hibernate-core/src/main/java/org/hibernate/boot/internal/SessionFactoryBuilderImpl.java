@@ -106,7 +106,9 @@ import static org.hibernate.cfg.AvailableSettings.USE_SECOND_LEVEL_CACHE;
 import static org.hibernate.cfg.AvailableSettings.USE_SQL_COMMENTS;
 import static org.hibernate.cfg.AvailableSettings.USE_STRUCTURED_CACHE;
 import static org.hibernate.cfg.AvailableSettings.WRAP_RESULT_SETS;
+import static org.hibernate.cfg.AvailableSettings.ALLOW_UPDATE_OUTSIDE_TRANSACTION;
 import static org.hibernate.engine.config.spi.StandardConverters.BOOLEAN;
+import static org.hibernate.jpa.AvailableSettings.DISCARD_PC_ON_CLOSE;
 
 /**
  * @author Gail Badner
@@ -465,6 +467,18 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 	}
 
 	@Override
+	public SessionFactoryBuilder allowOutOfTransactionUpdateOperations(boolean allow) {
+		this.options.allowOutOfTransactionUpdateOperations = allow;
+		return this;
+	}
+
+	@Override
+	public SessionFactoryBuilder enableReleaseResourcesOnCloseEnabled(boolean enable) {
+		this.options.releaseResourcesOnCloseEnabled = enable;
+		return this;
+	}
+
+	@Override
 	@SuppressWarnings("unchecked")
 	public <T extends SessionFactoryBuilder> T unwrap(Class<T> type) {
 		return (T) this;
@@ -511,6 +525,8 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 		private boolean flushBeforeCompletionEnabled;
 		private boolean autoCloseSessionEnabled;
 		private boolean jtaTransactionAccessEnabled;
+		private boolean allowOutOfTransactionUpdateOperations;
+		private boolean releaseResourcesOnCloseEnabled;
 
 		// (JTA) transaction handling
 		private boolean jtaTrackByThread;
@@ -541,6 +557,7 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 		private NullPrecedence defaultNullPrecedence;
 		private boolean orderUpdatesEnabled;
 		private boolean orderInsertsEnabled;
+
 
 		// multi-tenancy
 		private MultiTenancyStrategy multiTenancyStrategy;
@@ -738,6 +755,18 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 			this.commentsEnabled = ConfigurationHelper.getBoolean( USE_SQL_COMMENTS, configurationSettings );
 
 			this.preferUserTransaction = ConfigurationHelper.getBoolean( PREFER_USER_TRANSACTION, configurationSettings, false  );
+
+			this.allowOutOfTransactionUpdateOperations = ConfigurationHelper.getBoolean(
+					ALLOW_UPDATE_OUTSIDE_TRANSACTION,
+					configurationSettings,
+					false
+			);
+
+			this.releaseResourcesOnCloseEnabled = ConfigurationHelper.getBoolean(
+					DISCARD_PC_ON_CLOSE,
+					configurationSettings,
+					false
+			);
 		}
 
 		private static Interceptor determineInterceptor(Map configurationSettings, StrategySelector strategySelector) {
@@ -866,6 +895,15 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 		@Override
 		public boolean isJtaTransactionAccessEnabled() {
 			return jtaTransactionAccessEnabled;
+		}
+
+		public boolean isAllowOutOfTransactionUpdateOperations() {
+			return allowOutOfTransactionUpdateOperations;
+		}
+
+		@Override
+		public boolean isReleaseResourcesOnCloseEnabled() {
+			return releaseResourcesOnCloseEnabled;
 		}
 
 		@Override
@@ -1157,6 +1195,15 @@ public class SessionFactoryBuilderImpl implements SessionFactoryBuilderImplement
 	@Override
 	public boolean isJtaTransactionAccessEnabled() {
 		return options.isJtaTransactionAccessEnabled();
+	}
+
+	public boolean isAllowOutOfTransactionUpdateOperations() {
+		return options.isAllowOutOfTransactionUpdateOperations();
+	}
+
+	@Override
+	public boolean isReleaseResourcesOnCloseEnabled(){
+		return options.releaseResourcesOnCloseEnabled;
 	}
 
 	@Override

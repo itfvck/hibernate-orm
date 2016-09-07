@@ -231,22 +231,41 @@ public interface AvailableSettings {
 	String JPA_METAMODEL_GENERATION = "hibernate.ejb.metamodel.generation";
 
 	/**
+	 * Setting that indicates whether to build the JPA types. Accepts
+	 * 3 values:<ul>
+	 *     <li>
+	 *         <b>enabled</b> - Do the build
+	 *     </li>
+	 *     <li>
+	 *         <b>disabled</b> - Do not so the build
+	 *     </li>
+	 *     <li>
+	 *         <b>ignoreUnsupported</b> - Do the build, but ignore any non-JPA features that would otherwise
+	 *         result in a failure.
+	 *     </li>
+	 * </ul>
+	 *
+	 *
+	 */
+	@Deprecated
+	String JPA_METAMODEL_POPULATION = "hibernate.ejb.metamodel.population";
+
+	/**
 	 * Setting that controls whether we seek out JPA "static metamodel" classes and populate them.  Accepts
 	 * 3 values:<ul>
 	 *     <li>
-	 *         <b>enabled</b> - Do the population
+	 *         <b>enabled</b> -Do the population
 	 *     </li>
 	 *     <li>
 	 *         <b>disabled</b> - Do not do the population
 	 *     </li>
 	 *     <li>
-	 *         <b>ignoreUnsupported</b> - Do the population, but ignore any non-JPA features that would otherwise
+	 *         <b>skipUnsupported</b> - Do the population, but ignore any non-JPA features that would otherwise
 	 *         result in the population failing.
 	 *     </li>
 	 * </ul>
-	 *
 	 */
-	String JPA_METAMODEL_POPULATION = "hibernate.ejb.metamodel.population";
+	String STATIC_METAMODEL_POPULATION = "hibernate.jpa.static_metamodel.population";
 
 
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1473,7 +1492,7 @@ public interface AvailableSettings {
 	 */
 	String PROCEDURE_NULL_PARAM_PASSING = "hibernate.proc.param_null_passing";
 
-	/*
+	/**
 	 * Enable instantiation of composite/embedded objects when all of its attribute values are {@code null}.
 	 * The default (and historical) behavior is that a {@code null} reference will be used to represent the
 	 * composite when all of its attributes are {@code null}
@@ -1491,4 +1510,18 @@ public interface AvailableSettings {
 	 * The default behavior is to allow access unless the session is bootstrapped via JPA.
 	 */
 	String ALLOW_JTA_TRANSACTION_ACCESS = "hibernate.jta.allowTransactionAccess";
+
+	/**
+	 * Setting that allows to perform update operations outside of a transaction boundary.
+	 *
+	 * Since version 5.2 Hibernate conforms with the JPA specification and does not allow anymore
+	 * to flush any update out of a transaction boundary.
+	 * <p/>
+	 * Values are: {@code true} to allow flush operations out of a transaction, {@code false} to disallow.
+	 * <p/>
+	 * The default behavior is {@code false}
+	 *
+	 * @since 5.2
+	 */
+	String ALLOW_UPDATE_OUTSIDE_TRANSACTION = "hibernate.allow_update_outside_transaction";
 }

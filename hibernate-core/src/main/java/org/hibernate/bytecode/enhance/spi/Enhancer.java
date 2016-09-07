@@ -20,9 +20,13 @@ import org.hibernate.HibernateException;
 import org.hibernate.bytecode.enhance.internal.CompositeEnhancer;
 import org.hibernate.bytecode.enhance.internal.EntityEnhancer;
 import org.hibernate.bytecode.enhance.internal.FieldWriter;
+import org.hibernate.bytecode.enhance.internal.MappedSuperclassEnhancer;
 import org.hibernate.bytecode.enhance.internal.PersistentAttributesEnhancer;
+import org.hibernate.bytecode.enhance.internal.PersistentAttributesHelper;
+import org.hibernate.engine.spi.Managed;
 import org.hibernate.engine.spi.ManagedComposite;
 import org.hibernate.engine.spi.ManagedEntity;
+import org.hibernate.engine.spi.ManagedMappedSuperclass;
 import org.hibernate.engine.spi.PersistentAttributeInterceptable;
 import org.hibernate.engine.spi.PersistentAttributeInterceptor;
 import org.hibernate.internal.CoreLogging;
@@ -33,6 +37,7 @@ import org.hibernate.internal.CoreMessageLogger;
  *
  * @author Steve Ebersole
  * @author Jason Greene
+ * @author Luis Barreiro
  */
 public class Enhancer {
 	private static final CoreMessageLogger log = CoreLogging.messageLogger( Enhancer.class );
@@ -115,28 +120,40 @@ public class Enhancer {
 			return;
 		}
 		// skip already enhanced classes
-		for ( String interfaceName : managedCtClass.getClassFile2().getInterfaces() ) {
-			if ( ManagedEntity.class.getName().equals( interfaceName ) || ManagedComposite.class.getName().equals( interfaceName ) ) {
-				log.debugf( "Skipping enhancement of [%s]: already enhanced", managedCtClass.getName() );
-				return;
-			}
+		if ( alreadyEnhanced( managedCtClass ) ) {
+			log.debugf( "Skipping enhancement of [%s]: already enhanced", managedCtClass.getName() );
+			return;
 		}
 
 		if ( enhancementContext.isEntityClass( managedCtClass ) ) {
-			log.debugf( "Enhancing [%s] as Entity", managedCtClass.getName() );
+			log.infof( "Enhancing [%s] as Entity", managedCtClass.getName() );
 			new EntityEnhancer( enhancementContext ).enhance( managedCtClass );
 		}
 		else if ( enhancementContext.isCompositeClass( managedCtClass ) ) {
-			log.debugf( "Enhancing [%s] as Composite", managedCtClass.getName() );
+			log.infof( "Enhancing [%s] as Composite", managedCtClass.getName() );
 			new CompositeEnhancer( enhancementContext ).enhance( managedCtClass );
 		}
+		else if ( enhancementContext.isMappedSuperclassClass( managedCtClass ) ) {
+			log.infof( "Enhancing [%s] as MappedSuperclass", managedCtClass.getName() );
+			new MappedSuperclassEnhancer( enhancementContext ).enhance( managedCtClass );
+		}
 		else if ( enhancementContext.doExtendedEnhancement( managedCtClass ) ) {
-			log.debugf( "Extended enhancement of [%s]", managedCtClass.getName() );
+			log.infof( "Extended enhancement of [%s]", managedCtClass.getName() );
 			new PersistentAttributesEnhancer( enhancementContext ).extendedEnhancement( managedCtClass );
 		}
 		else {
 			log.debugf( "Skipping enhancement of [%s]: not entity or composite", managedCtClass.getName() );
 		}
+	}
+
+	private boolean alreadyEnhanced(CtClass managedCtClass) {
+		if ( !PersistentAttributesHelper.isAssignable( managedCtClass, Managed.class.getName() ) ) {
+			return false;
+		}
+		// HHH-10977 - When a mapped superclass gets enhanced before a subclassing entity, the entity does not get enhanced, but it implements the Managed interface
+		return enhancementContext.isEntityClass( managedCtClass ) && PersistentAttributesHelper.isAssignable( managedCtClass, ManagedEntity.class.getName() )
+				|| enhancementContext.isCompositeClass( managedCtClass ) && PersistentAttributesHelper.isAssignable( managedCtClass, ManagedComposite.class.getName() )
+				|| enhancementContext.isMappedSuperclassClass( managedCtClass ) && PersistentAttributesHelper.isAssignable( managedCtClass, ManagedMappedSuperclass.class.getName() );
 	}
 
 	private byte[] getByteCode(CtClass managedCtClass) {
@@ -174,11 +191,10 @@ public class Enhancer {
 				EnhancerConstants.INTERCEPTOR_SETTER_NAME );
 	}
 
-
 	/**
 	 * @deprecated Should use enhance(String, byte[]) and a proper EnhancementContext
 	 */
-	@Deprecated( )
+	@Deprecated
 	public byte[] enhanceComposite(String className, byte[] originalBytes) throws EnhancementException {
 		return enhance( className, originalBytes );
 	}

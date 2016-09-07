@@ -1066,8 +1066,8 @@ public interface CoreMessageLogger extends BasicLogger {
 	void unableToDropTemporaryIdTable(String message);
 
 	@LogMessage(level = ERROR)
-	@Message(value = "Exception executing batch [%s]", id = 315)
-	void unableToExecuteBatch(String message);
+	@Message(value = "Exception executing batch [%s], SQL: %s", id = 315)
+	void unableToExecuteBatch(Exception e, String sql );
 
 	@LogMessage(level = WARN)
 	@Message(value = "Error executing resolver [%s] : %s", id = 316)
@@ -1744,4 +1744,15 @@ public interface CoreMessageLogger extends BasicLogger {
 	@LogMessage(level = ERROR)
 	@Message(value = "Unsuccessful: %s", id = 478)
 	void unsuccessfulSchemaManagementCommand(String command);
+
+	@Message(
+			value = "Collection [%s] was not processed by flush()."
+			+ " This is likely due to unsafe use of the session (e.g. used in multiple threads concurrently, updates during entity lifecycle hooks).",
+			id = 479
+	)
+	String collectionNotProcessedByFlush(String role);
+
+	@LogMessage(level = WARN)
+	@Message(value = "A ManagedEntity was associated with a stale PersistenceContext. A ManagedEntity may only be associated with one PersistenceContext at a time; %s", id = 480)
+	void stalePersistenceContextInEntityEntry(String msg);
 }

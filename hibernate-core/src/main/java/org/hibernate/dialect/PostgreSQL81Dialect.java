@@ -37,7 +37,6 @@ import org.hibernate.hql.spi.id.IdTableSupportStandardImpl;
 import org.hibernate.hql.spi.id.MultiTableBulkIdStrategy;
 import org.hibernate.hql.spi.id.local.AfterUseAction;
 import org.hibernate.hql.spi.id.local.LocalTemporaryTableBulkIdStrategy;
-import org.hibernate.id.enhanced.SequenceStyleGenerator;
 import org.hibernate.internal.util.JdbcExceptionHelper;
 import org.hibernate.procedure.internal.PostgresCallableStatementSupport;
 import org.hibernate.procedure.spi.CallableStatementSupport;
@@ -288,7 +287,10 @@ public class PostgreSQL81Dialect extends Dialect {
 				}
 			}
 		}
-		LockMode lockMode = lockOptions.getLockMode();
+		LockMode lockMode = lockOptions.getAliasSpecificLockMode( aliases );
+		if (lockMode == null ) {
+			lockMode = lockOptions.getLockMode();
+		}
 		switch ( lockMode ) {
 			case UPGRADE:
 				return getForUpdateString(aliases);
@@ -323,8 +325,8 @@ public class PostgreSQL81Dialect extends Dialect {
 	}
 
 	@Override
-	public Class getNativeIdentifierGeneratorClass() {
-		return SequenceStyleGenerator.class;
+	public String getNativeIdentifierGeneratorStrategy() {
+		return "sequence";
 	}
 
 	@Override
@@ -585,7 +587,7 @@ public class PostgreSQL81Dialect extends Dialect {
 
 	@Override
 	public ResultSet getResultSet(CallableStatement statement, String name) throws SQLException {
-		throw new UnsupportedOperationException( "PostgreSQL only supports accessing REF_CURSOR parameters by name" );
+		throw new UnsupportedOperationException( "PostgreSQL only supports accessing REF_CURSOR parameters by position" );
 	}
 
 	@Override
@@ -596,5 +598,10 @@ public class PostgreSQL81Dialect extends Dialect {
 	@Override
 	public IdentityColumnSupport getIdentityColumnSupport() {
 		return new PostgreSQL81IdentityColumnSupport();
+	}
+
+	@Override
+	public boolean supportsNationalizedTypes() {
+		return false;
 	}
 }

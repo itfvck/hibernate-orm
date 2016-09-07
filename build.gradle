@@ -54,11 +54,16 @@ allprojects {
 }
 
 ext {
-	hibernateTargetVersion = '5.2.1-SNAPSHOT'
-	expectedGradleVersion = '2.10'
+	hibernateTargetVersion = '5.2.3-SNAPSHOT'
+	expectedGradleVersion = '3.0-milestone-1'
 	baselineJavaVersion = '1.8'
 
     osgiExportVersion = hibernateTargetVersion.replaceAll( '-SNAPSHOT', '.SNAPSHOT' )
+
+	final String[] versionComponents = hibernateTargetVersion.split( '\\.' );
+	hibernateFullVersion = hibernateTargetVersion
+	hibernateMajorMinorVersion = versionComponents[0] + '.' + versionComponents[1]
+	hibernateMajorVersion = versionComponents[0]
 }
 
 idea {
@@ -95,6 +100,10 @@ subprojects { subProject ->
     buildDir = "target"
 
 	if ( subProject.name.startsWith( 'release' ) || subProject.name.startsWith( 'documentation' ) ) {
+		return;
+	}
+
+	if ( subProject.name.startsWith( 'hibernate-orm-modules' ) ) {
 		return;
 	}
 
@@ -150,6 +159,7 @@ subprojects { subProject ->
 		testRuntime( libraries.postgresql )
 		testRuntime( libraries.mysql )
 		testRuntime( libraries.mariadb )
+		testRuntime( libraries.informix )
 		if (db.equalsIgnoreCase("oracle")) {
 			dependencies {
 				testRuntime( libraries.oracle )
@@ -238,10 +248,10 @@ subprojects { subProject ->
 			into sourceSets.test.output.classesDir
 		}
 		copy {
-			ext.targetDir = file( "${buildDir}/resources/test" )
 			from file('src/test/resources')
-			into targetDir
-			filter( ReplaceTokens, tokens: dbBundle[db] );
+			into file( "${buildDir}/resources/test" )
+			exclude 'src/test/resources/arquillian.xml'
+			filter( ReplaceTokens, tokens: dbBundle[db] )
 		}
 	} )
 	// ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

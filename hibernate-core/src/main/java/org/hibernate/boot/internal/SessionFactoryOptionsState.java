@@ -48,6 +48,10 @@ public interface SessionFactoryOptionsState {
 
 	boolean isJtaTransactionAccessEnabled();
 
+	boolean isAllowOutOfTransactionUpdateOperations();
+
+	boolean isReleaseResourcesOnCloseEnabled();
+
 	Object getBeanManagerReference();
 
 	Object getValidatorFactoryReference();
